@@ -1,0 +1,53 @@
+﻿@* @page "/mosaic" *@
+@inject IJSRuntime JSRuntime
+@rendermode InteractiveServer
+
+<h3>Mosaic Generator</h3>
+<p>
+    This page allows you to generate a mosaic image using a source image and tile images.
+    Select the source image and multiple tile images, then click "Generate Mosaic" to create your mosaic.
+</p>
+
+<div>
+    <label>Source Image:</label><br />
+    <InputFile OnChange="OnSourceImageSelected" accept="image/*" />
+</div>
+
+<div>
+    <label>Tile Images (multiple):</label><br />
+    <InputFile OnChange="OnTileImagesSelected" accept="image/*" multiple />
+</div>
+
+<div style="margin-top: 1em;">
+    <button @onclick="GenerateMosaic" disabled="@(!CanGenerate)">Generate Mosaic</button>
+</div>
+
+<canvas id="mosaicCanvas"></canvas>
+
+@code{
+    private IBrowserFile? sourceImage;
+    private IReadOnlyList<IBrowserFile>? tileImages;
+
+    private bool CanGenerate => sourceImage != null && tileImages?.Count > 0;
+
+    private void OnSourceImageSelected(InputFileChangeEventArgs e)
+    {
+        sourceImage = e.File;
+    }
+
+    private void OnTileImagesSelected(InputFileChangeEventArgs e)
+    {
+        tileImages = e.GetMultipleFiles();
+    }
+
+    private async Task GenerateMosaic()
+    {
+        if (sourceImage is null || tileImages is null)
+            return;
+
+        var module = await JSRuntime.InvokeAsync<IJSObjectReference>("import", "./js/mosaicGenerator.js");
+
+        // Create a JS-compatible FileList
+        await module.InvokeVoidAsync("generateMosaicFromFiles", sourceImage, tileImages, "mosaicCanvas", 16);
+    }
+}

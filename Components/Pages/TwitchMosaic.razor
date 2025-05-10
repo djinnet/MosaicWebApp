@@ -1,0 +1,94 @@
+﻿@page "/twitchmosaic"
+@inject TwitchService TwitchService
+@inject IJSRuntime JSRuntime
+@rendermode InteractiveServer
+
+<h3>Classic Mosaic Generator (Twitch)</h3>
+<p>
+    This page allows you to generate a mosaic image using the profile image of a Twitch user and their channel emotes.
+    Enter the Twitch username, select the tile size, and click "Generate Mosaic" to create your mosaic.
+</p>
+
+<div>
+    <label>Twitch Username:</label><br />
+    <input @bind="twitchUsername" placeholder="e.g. pokimane" />
+</div>
+
+<div>
+    <label>Tile Size:</label><br />
+    <select @bind="tileSize">
+        @for (int i = 2; i <= 32; i *= 2)
+        {
+            <option value="@i">@i</option>
+        }
+    </select>
+</div>
+
+<div style="margin-top: 1em;">
+    <button @onclick="GenerateMosaic" disabled="@IsLoading">Generate Mosaic</button>
+</div>
+
+@if (IsLoading)
+{
+    <p>Loading emotes and profile image...</p>
+}
+
+<canvas id="mosaicCanvas"></canvas>
+
+@code {
+    private string twitchUsername = string.Empty;
+    private bool IsLoading = false;
+    private int tileSize = 8; // Default tile size
+
+    private async Task GenerateMosaic()
+    {
+        Console.WriteLine("GenerateMosaic called");  // Debug log
+
+        if (string.IsNullOrWhiteSpace(twitchUsername))
+            return;
+
+        IsLoading = true;
+        StateHasChanged();
+
+        try
+        {
+            var profileUrl = await TwitchService.GetUserProfileImageAsync(twitchUsername);
+            var broadcasterId = await TwitchService.GetBroadcasterIdAsync(twitchUsername);
+            if (string.IsNullOrWhiteSpace(profileUrl) || string.IsNullOrWhiteSpace(broadcasterId))
+            {
+                IsLoading = false;
+                StateHasChanged();
+                return;
+            }
+            var emoteUrls = await TwitchService.GetChannelEmotesAsync(broadcasterId);
+
+            // Optional: fallback to global emotes if none exist
+            if (emoteUrls.Count == 0)
+            {
+                emoteUrls = await TwitchService.GetGlobalEmotesAsync();
+            }
+
+            var module = await JSRuntime.InvokeAsync<IJSObjectReference>("import", "./js/mosaicGenerator.js");
+
+            // Ensure the functions are available before calling them
+            if (module != null)
+            {
+                // Call the correct function based on the type of image (URLs)
+                await module.InvokeVoidAsync("generateMosaicFromUrls", profileUrl, emoteUrls, "mosaicCanvas", tileSize);
+            }
+            else
+            {
+                Console.WriteLine("Error: mosaicGenerator module not found");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error generating mosaic: {ex.Message}");
+        }
+        finally
+        {
+            IsLoading = false;
+            StateHasChanged();
+        }
+    }
+}

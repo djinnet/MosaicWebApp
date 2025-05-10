@@ -1,0 +1,36 @@
+﻿<div class="top-row ps-3 navbar navbar-dark">
+    <div class="container-fluid">
+        <a class="navbar-brand" href="">Mosaic App</a>
+    </div>
+</div>
+
+<input type="checkbox" title="Navigation menu" class="navbar-toggler" />
+
+<div class="nav-scrollable" onclick="document.querySelector('.navbar-toggler').click()">
+    <nav class="nav flex-column">
+        <div class="nav-item px-4">
+            <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
+                <span class="bi bi-house-door-fill-nav-menu" aria-hidden="true"></span> Home
+            </NavLink>
+        </div>
+
+        @* <div class="nav-item px-4">
+            <NavLink class="nav-link" href="mosaic">
+                <span class="bi bi-plus-square-fill-nav-menu" aria-hidden="true"></span> Mosaic
+            </NavLink>
+        </div> *@
+
+        <div class="nav-item px-4">
+            <NavLink class="nav-link" href="twitchmosaic">
+                <span class="bi bi-b1-square-fill-nav-menu" aria-hidden="true"></span> classic
+            </NavLink>
+        </div>
+
+        <div class="nav-item px-4">
+            <NavLink class="nav-link" href="colorsmosaic">
+                <span class="bi bi-b2-square-fill-nav-menu" aria-hidden="true"></span> Random colors
+            </NavLink>
+        </div>
+    </nav>
+</div>
+

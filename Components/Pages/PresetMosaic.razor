@@ -1,0 +1,99 @@
+﻿@page "/colorsmosaic"
+@inject TwitchService TwitchService
+@inject IJSRuntime JSRuntime
+@rendermode InteractiveServer
+
+<h3>Random Colors Mosaic Generator (Twitch)</h3>
+<p>
+    This page allows you to generate a mosaic image using random Colors and the profile image of a Twitch user.
+    Enter the Twitch username, select the tile size and the number of colors, and click "Generate Mosaic" to create your mosaic.
+</p>
+
+<div>
+    <label>Twitch Username:</label><br />
+    <input @bind="twitchUsername" placeholder="e.g. pokimane" />
+</div>
+
+<div>
+    <label>Tile Size:</label><br />
+    <select @bind="tileSize">
+        @for (int i = 2; i <= 32; i *= 2)
+        {
+            <option value="@i">@i</option>
+        }
+    </select>
+</div>
+
+<div>
+    <label>Amount of Colors:</label><br />
+    <select @bind="amountOfColors">
+        @for (int i = 4; i <= 20; i++)
+        {
+            <option value="@i">@i</option>
+        }
+    </select>
+</div>
+
+<div style="margin-top: 1em;">
+    <button @onclick="GenerateMosaic" disabled="@IsLoading">Generate Mosaic</button>
+</div>
+
+@if (IsLoading)
+{
+    <p>Loading emotes and profile image...</p>
+}
+
+<canvas id="mosaicCanvas"></canvas>
+
+@code {
+    private string twitchUsername = string.Empty;
+    private bool IsLoading = false;
+    private int tileSize = 8; // Default tile size
+    private int amountOfColors = 10; // Default amount of colors
+
+    private async Task GenerateMosaic()
+    {
+        Console.WriteLine("GenerateMosaic called");  // Debug log
+
+        if (string.IsNullOrWhiteSpace(twitchUsername))
+            return;
+
+        IsLoading = true;
+        StateHasChanged();
+
+        try
+        {
+            var profileUrl = await TwitchService.GetUserProfileImageAsync(twitchUsername);
+            var broadcasterId = await TwitchService.GetBroadcasterIdAsync(twitchUsername);
+            if (string.IsNullOrWhiteSpace(profileUrl) || string.IsNullOrWhiteSpace(broadcasterId))
+            {
+                IsLoading = false;
+                StateHasChanged();
+                return;
+            }
+            var colors = ColorService.GetPresetColorsAsync(amountOfColors);
+
+            var module = await JSRuntime.InvokeAsync<IJSObjectReference>("import", "./js/mosaicGenerator.js");
+
+            // Ensure the functions are available before calling them
+            if (module != null)
+            {
+                // Call the correct function based on the type of image (URLs)
+                await module.InvokeVoidAsync("generateMosaicFromPresetColor", profileUrl, colors, "mosaicCanvas", tileSize);
+            }
+            else
+            {
+                Console.WriteLine("Error: mosaicGenerator module not found");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error generating mosaic: {ex.Message}");
+        }
+        finally
+        {
+            IsLoading = false;
+            StateHasChanged();
+        }
+    }
+}
