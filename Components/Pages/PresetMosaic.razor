@@ -17,9 +17,9 @@
 <div>
     <label>Tile Size:</label><br />
     <select @bind="tileSize">
-        @for (int i = 2; i <= 32; i *= 2)
+        @foreach (var size in Enum.GetValues(typeof(ESizes)).Cast<ESizes>())
         {
-            <option value="@i">@i</option>
+            <option value="@((int)size)">@((int)size)</option>
         }
     </select>
 </div>
@@ -27,9 +27,20 @@
 <div>
     <label>Amount of Colors:</label><br />
     <select @bind="amountOfColors">
-        @for (int i = 4; i <= 20; i++)
+        @for (int i = MinColors; i <= MaxColors; i++)
         {
             <option value="@i">@i</option>
+        }
+    </select>
+</div>
+
+<div>
+    <label>Shape of mosaic:</label><br />
+    <!-- use enum Eshapes -->
+    <select @bind="shape">
+        @foreach (var shape in Enum.GetValues(typeof(EShapes)).Cast<EShapes>())
+        {
+            <option value="@((int)shape)">@shape.ToString()</option>
         }
     </select>
 </div>
@@ -50,6 +61,9 @@
     private bool IsLoading = false;
     private int tileSize = 8; // Default tile size
     private int amountOfColors = 10; // Default amount of colors
+    private int MaxColors = 20; // Maximum amount of colors
+    private int MinColors = 4; // Minimum amount of colors
+    private int shape = 0; // Default shape (image)
 
     private async Task GenerateMosaic()
     {
@@ -79,7 +93,7 @@
             if (module != null)
             {
                 // Call the correct function based on the type of image (URLs)
-                await module.InvokeVoidAsync("generateMosaicFromPresetColor", profileUrl, colors, "mosaicCanvas", tileSize);
+                await module.InvokeVoidAsync("generateMosaicFromPresetColor", profileUrl, colors, "mosaicCanvas", tileSize, shape);
             }
             else
             {

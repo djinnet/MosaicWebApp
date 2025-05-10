@@ -17,9 +17,10 @@
 <div>
     <label>Tile Size:</label><br />
     <select @bind="tileSize">
-        @for (int i = 2; i <= 32; i *= 2)
+        <!-- use enum ESizes -->
+        @foreach (var size in Enum.GetValues(typeof(ESizes)).Cast<ESizes>())
         {
-            <option value="@i">@i</option>
+            <option value="@((int)size)">@((int)size)</option>
         }
     </select>
 </div>
@@ -39,6 +40,7 @@
     private string twitchUsername = string.Empty;
     private bool IsLoading = false;
     private int tileSize = 8; // Default tile size
+    private int shape = 0; // Default shape (image)
 
     private async Task GenerateMosaic()
     {
@@ -74,7 +76,7 @@
             if (module != null)
             {
                 // Call the correct function based on the type of image (URLs)
-                await module.InvokeVoidAsync("generateMosaicFromUrls", profileUrl, emoteUrls, "mosaicCanvas", tileSize);
+                await module.InvokeVoidAsync("generateMosaicFromUrls", profileUrl, emoteUrls, "mosaicCanvas", tileSize, shape);
             }
             else
             {

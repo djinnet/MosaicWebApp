@@ -187,10 +187,9 @@ function DrawResult(shapeType, ctx, image, x, y, scl) {
         throw new Error('You must pass a number to DrawResult!');
     }
     switch (shapeType) {
-        // DrawResult(0) - Draw a square
+        // DrawResult(0) - Draw a image
         case 0:
-            ctx.fillStyle = image;
-            ctx.fillRect(x * scl, y * scl, scl, scl);
+            
             break;
         // DrawResult(1) - Draw a circle
         case 1:
@@ -203,8 +202,13 @@ function DrawResult(shapeType, ctx, image, x, y, scl) {
             ctx.stroke();
             ctx.closePath();
             break;
-        // DrawResult(2) - Draw a triangle
+        // DrawResult(2) - Draw a square
         case 2:
+            ctx.fillStyle = image;
+            ctx.fillRect(x * scl, y * scl, scl, scl);
+            break;
+        // DrawResult(3) - Draw a triangle
+        case 3:
             ctx.beginPath();
             ctx.moveTo(x * scl + scl / 2, y * scl);
             ctx.lineTo(x * scl, y * scl + scl);
@@ -213,12 +217,136 @@ function DrawResult(shapeType, ctx, image, x, y, scl) {
             ctx.fill();
             ctx.closePath();
             break;
-        // DrawResult(3) - Draw a image
-        case 3:
+        // DrawResult(4) - Draw a hexagon
+        case 4:
+            ctx.beginPath();
+            ctx.moveTo(x * scl + scl / 2, y * scl);
+            ctx.lineTo(x * scl + scl, y * scl + scl / 4);
+            ctx.lineTo(x * scl + scl, y * scl + (scl * 3) / 4);
+            ctx.lineTo(x * scl + scl / 2, y * scl + scl);
+            ctx.lineTo(x * scl, y * scl + (scl * 3) / 4);
+            ctx.lineTo(x * scl, y * scl + scl / 4);
+            ctx.fillStyle = image;
+            ctx.fill();
+            ctx.closePath();
+            break;
+        // DrawResult(5) - Draw a pentagon
+        case 5:
+            ctx.beginPath();
+            ctx.moveTo(x * scl + scl / 2, y * scl);
+            ctx.lineTo(x * scl + (scl * 3) / 4, y * scl + (scl * 3) / 4);
+            ctx.lineTo(x * scl + (scl / 2), y * scl + scl);
+            ctx.lineTo(x * scl + (scl / 4), y * scl + (scl * 3) / 4);
+            ctx.lineTo(x * scl, y * scl);
+            ctx.fillStyle = image;
+            ctx.fill();
+            ctx.closePath();
+            break;
+        // DrawResult(6) - Draw a octagon
+        case 6:
+            ctx.beginPath();
+            ctx.moveTo(x * scl + scl / 2, y * scl);
+            ctx.lineTo(x * scl + (scl * 3) / 4, y * scl);
+            ctx.lineTo(x * scl + scl, y * scl + scl / 4);
+            ctx.lineTo(x * scl + scl, y * scl + (scl * 3) / 4);
+            ctx.lineTo(x * scl + (scl * 3) / 4, y * scl + scl);
+            ctx.lineTo(x * scl + (scl / 4), y * scl + scl);
+            ctx.lineTo(x * scl, y * scl + (scl * 3) / 4);
+            ctx.lineTo(x * scl, y * scl + (scl / 4));
+            ctx.fillStyle = image;
+            ctx.fill();
+            ctx.closePath();
+            break;
+        // DrawResult(7) - Draw a star
+        case 7:
+            const cx = x * scl + scl / 2;
+            const cy = y * scl + scl / 2;
+            const outerRadius = scl / 2;
+            const innerRadius = scl / 4;
+
+            drawStar(ctx, cx, cy, 5, outerRadius, innerRadius, image);
+            break;
+        // DrawResult(8) - Draw a diamond
+        case 8:
+            ctx.beginPath();
+            ctx.moveTo(x * scl + scl / 2, y * scl);
+            ctx.lineTo(x * scl, y * scl + scl / 2);
+            ctx.lineTo(x * scl + scl / 2, y * scl + scl);
+            ctx.lineTo(x * scl + scl, y * scl + scl / 2);
+            ctx.fillStyle = image;
+            ctx.fill();
+            ctx.closePath();
+            break;
+        // DrawResult(9) - Draw a heart
+        case 9:
+            drawHeart(ctx, x * scl + scl / 2, y * scl + scl / 2, scl, scl, image);
+            break;
+        
+        default:
+            console.error('Invalid shape type passed to DrawResult! Changing to imagedraw!');
             ctx.drawImage(image, x * scl, y * scl, scl, scl);
             break;
-        default:
-            console.error('Invalid shape type passed to DrawResult!');
-            break;
     }
+
+    function drawStar(ctx, cx, cy, spikes, outerRadius, innerRadius, fillStyle) {
+        let rot = Math.PI / 2 * 3;
+        let step = Math.PI / spikes;
+        ctx.beginPath();
+        ctx.moveTo(cx, cy - outerRadius);
+
+        for (let i = 0; i < spikes; i++) {
+            let x = cx + Math.cos(rot) * outerRadius;
+            let y = cy + Math.sin(rot) * outerRadius;
+            ctx.lineTo(x, y);
+            rot += step;
+
+            x = cx + Math.cos(rot) * innerRadius;
+            y = cy + Math.sin(rot) * innerRadius;
+            ctx.lineTo(x, y);
+            rot += step;
+        }
+
+        ctx.lineTo(cx, cy - outerRadius);
+        ctx.closePath();
+        ctx.fillStyle = fillStyle;
+        ctx.fill();
+    }
+
+    function drawHeart(context, x, y, width, height, image) {
+        context.beginPath();
+        var topCurveHeight = height * 0.3;
+        context.moveTo(x, y + topCurveHeight);
+        // top left curve
+        context.bezierCurveTo(
+            x, y,
+            x - width / 2, y,
+            x - width / 2, y + topCurveHeight
+        );
+
+        // bottom left curve
+        context.bezierCurveTo(
+            x - width / 2, y + (height + topCurveHeight) / 2,
+            x, y + (height + topCurveHeight) / 2,
+            x, y + height
+        );
+
+        // bottom right curve
+        context.bezierCurveTo(
+            x, y + (height + topCurveHeight) / 2,
+            x + width / 2, y + (height + topCurveHeight) / 2,
+            x + width / 2, y + topCurveHeight
+        );
+
+        // top right curve
+        context.bezierCurveTo(
+            x + width / 2, y,
+            x, y,
+            x, y + topCurveHeight
+        );
+
+        context.closePath();
+        context.fillStyle = image;
+        context.fill();
+    }
+
 }
