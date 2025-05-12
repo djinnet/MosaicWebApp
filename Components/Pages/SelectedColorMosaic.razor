@@ -1,0 +1,139 @@
+﻿@page "/selectedcolorsmosaic"
+@inject TwitchService TwitchService
+@inject IJSRuntime JSRuntime
+@rendermode InteractiveServer
+
+<h3>Random Colors Mosaic Generator (Twitch)</h3>
+<p>
+    This page allows you to generate a mosaic image using random Colors and the profile image of a Twitch user.
+    Enter the Twitch username, select the tile size and the number of colors, and click "Generate Mosaic" to create your mosaic.
+</p>
+
+<div>
+    <label>Twitch Username:</label><br />
+    <input @bind="twitchUsername" placeholder="e.g. pokimane" />
+</div>
+
+<div>
+    <label>Tile Size:</label><br />
+    <select @bind="tileSize">
+        @foreach (var size in Enum.GetValues(typeof(ESizes)).Cast<ESizes>())
+        {
+            <option value="@((int)size)">@((int)size)</option>
+        }
+    </select>
+</div>
+
+<div>
+    <label>Shape of mosaic:</label><br />
+    <!-- use enum Eshapes -->
+    <select @bind="shape">
+        @foreach (var shape in Enum.GetValues(typeof(EShapes)).Cast<EShapes>())
+        {
+            <option value="@((int)shape)">@shape.ToString()</option>
+        }
+    </select>
+</div>
+
+<div>
+    <label>Color Palette:</label><br />
+    <ColorPalettePicker @bind-SelectedColors="selectedColors" />
+</div>
+
+<div style="margin-top: 1em;">
+    <button @onclick="GenerateMosaic" disabled="@IsLoading">Generate Mosaic</button>
+</div>
+
+@if (IsLoading)
+{
+    <p>Loading emotes and profile image...</p>
+}
+
+@if (IsError)
+{
+    <p style="color:red; border:dotted; padding: 10px;">
+        @(ErrorMessage)
+    </p>
+}
+else
+{
+    <canvas id="mosaicCanvas"></canvas>
+}
+
+@code {
+    private string twitchUsername = string.Empty;
+    private bool IsLoading = false;
+    private int tileSize = 8; // Default tile size
+    private int MaxColors = 5; // Maximum amount of colors
+    private int shape = 0; // Default shape (image)
+    private bool IsError = false;
+    private string ErrorMessage = string.Empty;
+    private List<string> selectedColors = new List<string>(new string[5]);
+
+    private async Task GenerateMosaic()
+    {
+        Console.WriteLine("GenerateMosaic called");  // Debug log
+        IsError = false;
+        if (string.IsNullOrWhiteSpace(twitchUsername))
+        {
+            IsError = true;
+            ErrorMessage = "Please enter a Twitch username.";
+            return;
+        }
+
+        IsLoading = true;
+        StateHasChanged();
+
+        try
+        {
+            var profileUrl = await TwitchService.GetUserProfileImageAsync(twitchUsername);
+            var broadcasterId = await TwitchService.GetBroadcasterIdAsync(twitchUsername);
+            if (string.IsNullOrWhiteSpace(profileUrl) || string.IsNullOrWhiteSpace(broadcasterId))
+            {
+                IsError = true;
+                ErrorMessage = "Failed to retrieve profile image or broadcaster ID.";
+                return;
+            }
+
+            var colors = selectedColors;
+
+            var removedEmptyColors = colors.Where(c => !string.IsNullOrEmpty(c)).ToList();
+            if (removedEmptyColors.Count == 0)
+            {
+                IsError = true;
+                ErrorMessage = "Please fill all the colors slots.";
+                return;
+            }
+
+            // check if color contains at least one null or empty color
+            if (removedEmptyColors.Count < 5)
+            {
+                IsError = true;
+                ErrorMessage = $"Please select at least {MaxColors} colors.";
+                return;
+            }
+
+            var module = await JSRuntime.InvokeAsync<IJSObjectReference>("import", "./js/mosaicGenerator.js");
+
+            // Ensure the functions are available before calling them
+            if (module != null)
+            {
+                // Call the correct function based on the type of image (URLs)
+                await module.InvokeVoidAsync("generateMosaicFromPresetColor", profileUrl, colors, "mosaicCanvas", tileSize, shape);
+            }
+            else
+            {
+                Console.WriteLine("Error: mosaicGenerator module not found");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error generating mosaic: {ex.Message}");
+        }
+        finally
+        {
+            IsLoading = false;
+            StateHasChanged();
+        }
+    }
+}

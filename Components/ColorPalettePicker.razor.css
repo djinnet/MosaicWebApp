@@ -1,0 +1,73 @@
+﻿.color-palette {
+    position: relative;
+    display: flex;
+    gap: 16px;
+    margin-top: 20px;
+    flex-wrap: wrap;
+}
+
+.color-slot {
+    width: 120px;
+    height: 120px;
+    border: 2px dashed #bbb;
+    border-radius: 8px;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    transition: border-color 0.2s;
+    background-color: #f9f9f9;
+}
+
+.color-slot:hover {
+    border-color: #888;
+}
+
+.color-box {
+    width: 40px;
+    height: 40px;
+    border-radius: 4px;
+    border: 1px solid #333;
+    margin-bottom: 8px;
+}
+
+.empty-slot {
+    font-size: 32px;
+    color: #aaa;
+}
+
+.color-slot span {
+    font-size: 14px;
+    margin-bottom: 6px;
+    word-break: break-word;
+}
+
+.delete-button {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    background-color: #fff;
+    border: 1px solid #ccc;
+    border-radius: 50%;
+    width: 22px;
+    height: 22px;
+    text-align: center;
+    line-height: 18px;
+    font-size: 14px;
+    cursor: pointer;
+    color: #c00;
+    font-weight: bold;
+}
+
+/*This is the color picker container that appears when a color slot is clicked above of the color slot */
+.color-picker-container {
+    position: absolute;
+    z-index: 1000;
+    background-color: #fff;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    padding: 16px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}

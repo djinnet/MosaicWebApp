@@ -1,0 +1,103 @@
+﻿@using Microsoft.AspNetCore.Components.Web
+@implements IDisposable
+
+<div class="color-palette">
+    @for (int i = 0; i < MaxColors; i++)
+    {
+        var index = i;
+        var color = SelectedColors[index];
+        <div class="color-slot" id="color-slot-@(index)" @onclick="@(() => OnSlotClick(index))">
+            @if (!string.IsNullOrEmpty(color))
+            {
+                <div class="color-box" style="background-color:@color"></div>
+                <span>@color</span>
+                <button class="delete-button" @onclick="@(() => RemoveColor(index))" @onclick:stopPropagation="true">x</button>
+            }
+            else
+            {
+                <div class="empty-slot">+</div>
+            }
+        </div>
+    }
+
+    @if (IsColorPickerVisible)
+    {
+        <div class="color-picker-container" id="color-picker-container" @ref="ColorPickerRef">
+            <input type="color" @onchange="OnColorPicked" />
+        </div>
+    }
+</div>
+
+@code {
+
+    private const int MaxColors = 5;
+
+    [Parameter]
+    public List<string> SelectedColors { get; set; } = new List<string>(new string[MaxColors]);
+
+    [Parameter]
+    public EventCallback<List<string>> SelectedColorsChanged { get; set; }
+
+    private bool IsColorPickerVisible = false;
+    private int ActiveSlotIndex = -1;
+    private ElementReference ColorPickerRef;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            // Register a click event to listen for outside clicks
+            await JS.InvokeVoidAsync("registerOutsideClick", DotNetObjectReference.Create(this));
+        }
+
+        if (IsColorPickerVisible && ActiveSlotIndex >= 0)
+        {
+            await JS.InvokeVoidAsync("positionAbove", "color-picker-container", $"color-slot-{ActiveSlotIndex}");
+        }
+    }
+
+    [Inject] private IJSRuntime JS { get; set; }
+
+    private void OnSlotClick(int index)
+    {
+        if (!string.IsNullOrEmpty(SelectedColors[index]))
+            return;
+
+        ActiveSlotIndex = index;
+        IsColorPickerVisible = true;
+        // Set the position of the color picker
+        //_ = JS.InvokeVoidAsync("positionAbove", "color-picker-container", $"color-slot-{index}");
+        StateHasChanged();
+    }
+
+    private void RemoveColor(int index)
+    {
+        SelectedColors[index] = null;
+        SelectedColorsChanged.InvokeAsync(SelectedColors);
+    }
+
+    private void OnColorPicked(ChangeEventArgs e)
+    {
+        if (ActiveSlotIndex >= 0)
+        {
+            SelectedColors[ActiveSlotIndex] = e.Value?.ToString() ?? "#fff";
+            ActiveSlotIndex = -1;
+            IsColorPickerVisible = false;
+
+            SelectedColorsChanged.InvokeAsync(SelectedColors);
+        }
+    }
+
+    [JSInvokable]
+    public void HideColorPicker()
+    {
+        IsColorPickerVisible = false;
+        ActiveSlotIndex = -1;
+        StateHasChanged();
+    }
+
+    public void Dispose()
+    {
+        _ = JS.InvokeVoidAsync("unregisterOutsideClick");
+    }
+}
